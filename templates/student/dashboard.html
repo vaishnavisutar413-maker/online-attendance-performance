@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block content %}
+<h2>{{ student.full_name }}</h2>
+<p class="muted">{{ student.roll_no }} · {{ student.class_name }} · {{ student.email }}</p>
+
+{% if overall.percent < threshold %}
+<div class="alert alert-danger">
+  ⚠ Your attendance is <strong>{{ overall.percent }}%</strong>, below the required {{ threshold }}%.
+  Attend the next <strong>{{ needed }}</strong> session(s) without absence to clear the shortage.
+</div>
+{% endif %}
+
+<div class="stats">
+  <div class="stat {{ 'warn' if overall.percent < threshold else 'ok' }}"><span>Overall attendance</span><strong>{{ overall.percent }}%</strong><small>{{ overall.attended }}/{{ overall.held }} sessions</small></div>
+  <div class="stat"><span>Average marks</span><strong>{{ avg }}</strong><small>Grade {{ grade_for(avg) }}</small></div>
+  <div class="stat"><span>Subjects</span><strong>{{ rows|length }}</strong></div>
+</div>
+
+<div class="card">
+  <h3>Subject-wise attendance</h3>
+  {% for r in rows %}
+  <div class="progress-row">
+    <span>{{ r.code }} — {{ r.name }}</span>
+    <div class="progress"><div class="bar {{ 'bad' if r.percent < threshold else 'good' }}" style="width: {{ r.percent }}%"></div></div>
+    <span class="pill {{ 'bad' if r.percent < threshold else 'good' }}">{{ r.percent }}%</span>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h3>Marks &amp; grades</h3>
+  <div class="table-wrap"><table class="table"><thead><tr><th>Code</th><th>Subject</th><th>Internal /40</th><th>External /60</th><th>Total /100</th><th>Grade</th></tr></thead><tbody>
+    {% for r in rows %}<tr><td>{{ r.code }}</td><td>{{ r.name }}</td><td>{{ r.internal }}</td><td>{{ r.external }}</td><td><strong>{{ r.total }}</strong></td><td><span class="pill {{ 'bad' if r.grade == 'F' else 'good' }}">{{ r.grade }}</span></td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+
+<div class="grid-2">
+  <div class="card"><h3>Marks by subject</h3><canvas id="marksChart" height="220"></canvas></div>
+  <div class="card"><h3>Attendance by subject</h3><canvas id="attChart" height="220"></canvas></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const rows = {{ rows|tojson }};
+  const labels = rows.map(r => r.code);
+  barChart("marksChart", labels, [
+    { label: "Internal", data: rows.map(r => r.internal) },
+    { label: "External", data: rows.map(r => r.external) }
+  ], { stacked: true });
+  lineChart("attChart", labels, [{ label: "Attendance %", data: rows.map(r => r.percent) }], {{ threshold }});
+</script>
+{% endblock %}

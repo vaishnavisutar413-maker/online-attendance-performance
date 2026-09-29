@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Marks Entry{% endblock %}
+{% block content %}
+<h2>Internal &amp; External Marks</h2>
+<form method="get" class="form-inline card">
+  <label>Subject
+    <select name="subject_id" onchange="this.form.submit()">
+      {% for s in subjects %}<option value="{{ s.id }}" {{ 'selected' if s.id == subject_id }}>{{ s.code }} — {{ s.name }} ({{ s.class_name }})</option>{% endfor %}
+    </select>
+  </label>
+</form>
+
+{% if roster %}
+<form method="post" class="card" data-marks-form>
+  <input type="hidden" name="subject_id" value="{{ subject_id }}">
+  <div class="table-wrap"><table class="table"><thead><tr><th>Roll</th><th>Name</th><th>Internal /40</th><th>External /60</th><th>Total</th><th>Grade</th></tr></thead><tbody>
+    {% for r in roster %}
+    <tr data-mark-row>
+      <td>{{ r.roll_no }}</td><td>{{ r.full_name }}</td>
+      <td><input class="num" type="number" min="0" max="40" name="internal_{{ r.id }}" value="{{ r.internal }}" data-internal></td>
+      <td><input class="num" type="number" min="0" max="60" name="external_{{ r.id }}" value="{{ r.external }}" data-external></td>
+      <td data-total>{{ r.internal + r.external }}</td>
+      <td><span class="pill" data-grade>{{ grade_for(r.internal + r.external) }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody></table></div>
+  <button class="btn btn-primary">Save marks</button>
+</form>
+<div class="card"><h3>Score distribution</h3><canvas id="marksDist" height="200"></canvas></div>
+{% else %}<p class="muted">No students found for this subject.</p>{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  const roster = {{ roster|tojson }};
+  if (roster.length) barChart("marksDist", roster.map(r => r.roll_no), [
+    { label: "Internal", data: roster.map(r => r.internal) },
+    { label: "External", data: roster.map(r => r.external) }
+  ], { stacked: true });
+</script>
+{% endblock %}

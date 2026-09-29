@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Mark Attendance{% endblock %}
+{% block content %}
+<h2>Daily Attendance</h2>
+<form method="get" class="form-inline card">
+  <label>Subject
+    <select name="subject_id" onchange="this.form.submit()">
+      {% for s in subjects %}<option value="{{ s.id }}" {{ 'selected' if s.id == subject_id }}>{{ s.code }} — {{ s.name }} ({{ s.class_name }})</option>{% endfor %}
+    </select>
+  </label>
+  <label>Date <input type="date" name="date" value="{{ day }}" onchange="this.form.submit()"></label>
+</form>
+
+{% if roster %}
+<form method="post" class="card">
+  <input type="hidden" name="subject_id" value="{{ subject_id }}">
+  <input type="hidden" name="date" value="{{ day }}">
+  <div class="toolbar">
+    <button type="button" class="btn btn-sm btn-outline" data-mark-all="present">All present</button>
+    <button type="button" class="btn btn-sm btn-outline" data-mark-all="absent">All absent</button>
+    <span class="muted" id="att-summary"></span>
+  </div>
+  <div class="table-wrap"><table class="table"><thead><tr><th>Roll</th><th>Name</th><th>Status</th><th>Subject %</th></tr></thead><tbody>
+    {% for r in roster %}
+    <tr>
+      <td>{{ r.roll_no }}</td><td>{{ r.full_name }}</td>
+      <td class="status-group">
+        {% for st in ['present','absent','late'] %}
+        <label class="radio {{ st }}"><input type="radio" name="status_{{ r.id }}" value="{{ st }}" {{ 'checked' if (r.status or 'present') == st }}> {{ st|capitalize }}</label>
+        {% endfor %}
+      </td>
+      <td><span class="pill {{ 'bad' if r.percent < threshold else 'good' }}">{{ r.percent }}%</span>{% if r.percent < threshold %} <small class="danger-text">Defaulter</small>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody></table></div>
+  <button class="btn btn-primary">Save attendance</button>
+</form>
+{% else %}<p class="muted">No students found for this subject.</p>{% endif %}
+{% endblock %}

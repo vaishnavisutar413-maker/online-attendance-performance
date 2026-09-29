@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block content %}
+<h2>Welcome, {{ session.name }}</h2>
+<div class="stats">
+  <div class="stat"><span>My subjects</span><strong>{{ subjects|length }}</strong></div>
+  <div class="stat"><span>Sessions taken</span><strong>{{ subjects|sum(attribute='sessions') }}</strong></div>
+  <div class="stat warn"><span>Defaulters</span><strong>{{ defaulters|length }}</strong></div>
+</div>
+
+<div class="cards">
+  {% for s in subjects %}
+  <div class="card subject-card">
+    <span class="muted">{{ s.code }} · {{ s.class_name }}</span>
+    <h3>{{ s.name }}</h3>
+    <p>{{ s.students }} students · {{ s.sessions }} sessions</p>
+    <p>Attendance <span class="pill {{ 'bad' if s.attendance < 75 else 'good' }}">{{ s.attendance }}%</span> · Avg marks <strong>{{ s.avg_marks }}</strong></p>
+    <div class="actions">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('attendance', subject_id=s.id) }}">Mark attendance</a>
+      <a class="btn btn-outline btn-sm" href="{{ url_for('marks', subject_id=s.id) }}">Enter marks</a>
+    </div>
+  </div>
+  {% else %}<p class="muted">No subjects assigned yet.</p>{% endfor %}
+</div>
+
+<div class="grid-2">
+  <div class="card"><h3>Subject overview</h3><canvas id="subjChart" height="220"></canvas></div>
+  <div class="card">
+    <h3>Students below 75%</h3>
+    {% if defaulters %}
+    <table class="table"><thead><tr><th>Roll</th><th>Name</th><th>%</th></tr></thead><tbody>
+      {% for d in defaulters %}<tr><td>{{ d.roll_no }}</td><td>{{ d.full_name }}</td><td><span class="pill bad">{{ d.percent }}%</span></td></tr>{% endfor %}
+    </tbody></table>
+    {% else %}<p class="muted">Everyone meets the requirement.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const s = {{ subjects|tojson }};
+  barChart("subjChart", s.map(x => x.code), [
+    { label: "Attendance %", data: s.map(x => Number(x.attendance)) },
+    { label: "Avg marks", data: s.map(x => Number(x.avg_marks)) }
+  ]);
+</script>
+{% endblock %}

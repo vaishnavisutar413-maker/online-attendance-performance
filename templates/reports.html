@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="toolbar"><h2>Reports</h2><button class="btn btn-outline btn-sm" onclick="window.print()">Print</button></div>
+
+<div class="grid-2">
+  <div class="card"><h3>Average marks by subject</h3><canvas id="perfChart" height="220"></canvas></div>
+  <div class="card"><h3>Grade distribution</h3><canvas id="gradeChart" height="220"></canvas></div>
+</div>
+
+<div class="card">
+  <h3>Subject performance</h3>
+  <div class="table-wrap"><table class="table"><thead><tr><th>Code</th><th>Subject</th><th>Average</th><th>Top score</th><th>Failed (&lt;40)</th></tr></thead><tbody>
+    {% for s in subject_perf %}<tr><td>{{ s.code }}</td><td>{{ s.name }}</td><td>{{ s.avg_marks }}</td><td>{{ s.top }}</td><td>{{ s.failed }}</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+
+<div class="card">
+  <h3>Attendance defaulters (below {{ threshold }}%)</h3>
+  {% if defaulters %}
+  <div class="table-wrap"><table class="table"><thead><tr><th>Roll</th><th>Name</th><th>Class</th><th>Attended / Held</th><th>%</th></tr></thead><tbody>
+    {% for d in defaulters %}<tr><td>{{ d.roll_no }}</td><td>{{ d.full_name }}</td><td>{{ d.class_name }}</td><td>{{ d.attended }} / {{ d.held }}</td><td><span class="pill bad">{{ d.percent }}%</span></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="muted">No defaulters.</p>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const perf = {{ subject_perf|tojson }};
+  barChart("perfChart", perf.map(p => p.code), [{ label: "Average", data: perf.map(p => Number(p.avg_marks)) }]);
+  const grades = {{ grades|tojson }};
+  const order = ["O","A+","A","B+","B","C","F"].filter(g => grades[g]);
+  pieChart("gradeChart", order, order.map(g => grades[g]));
+</script>
+{% endblock %}
